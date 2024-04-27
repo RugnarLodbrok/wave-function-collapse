@@ -13,6 +13,8 @@ python = "^3.12"
 pygame = "*"
 
 [tool.poetry.group.dev.dependencies]
+autoflake = "^2.0.0"
+black = "^22.0.0"  # 24 messes with one-line functions: def foo(): ...
 flake8 = "^6.0.0"
 #flake8-alembic = "^1.0.1"
 flake8-builtins = "^1.4"

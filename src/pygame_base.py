@@ -1,23 +1,12 @@
-from functools import reduce
-from operator import add
 from typing import Callable, Self
 
 import pygame
-from pygame import Surface, Vector2
-from py_tools.time_utils import swatch
-from time import time
-
+from pygame import Surface
 from pygame.event import Event
-from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
+from pygame.locals import K_ESCAPE, KEYDOWN
 
+from py_tools.time_utils import swatch
+from src.config import Config
 from src.resources import init as load_resources
 
 
@@ -36,7 +25,7 @@ class Game:
         self._initialized = False
         self.screen: Surface | None = None
         self.fill = (255, 255, 255)
-        self.key_map: dict[int: Callable[[Self], None]] = {}
+        self.key_map: dict[int : Callable[[Self], None]] = {}
 
     def _update(self, dt: float):
         for obj in self.objects:
@@ -55,11 +44,11 @@ class Game:
 
     def initialize(self):
         pygame.init()
-        self.screen = pygame.display.set_mode([1280, 1280])
+        self.screen = pygame.display.set_mode(Config.WH)
         load_resources()
         self._initialized = True
 
-    def run(self, fps: float = 60):
+    def run(self, fps: float = Config.FPS):
         if not self._initialized:
             self.initialize()
         self._running = True

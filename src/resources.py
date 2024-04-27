@@ -1,7 +1,7 @@
 from pathlib import Path
+
 import pygame
 from pygame import Surface
-from pygame.freetype import Font
 
 ROOT = Path(__file__).parent.parent
 RESOURCES = ROOT / 'resources'
