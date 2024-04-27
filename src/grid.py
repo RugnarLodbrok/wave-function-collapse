@@ -9,9 +9,10 @@ from pygame.locals import K_SPACE
 from pygame.math import Vector2
 
 from src.config import Config
+from src.munich_tile import TILES
 from src.pygame_base import Game, GameObject
 from src.slot import Slot
-from src.t_tile import TILES, Tile
+from src.tile_base import TileBase as Tile
 
 
 class Blank:
@@ -71,21 +72,25 @@ class Grid(GameObject):
         assert isinstance(self[slot], Blank)
         if not self[slot].possibilities:
             return  # todo: raise
-        tile = choice(
-            self[slot].possibilities
-        )  # todo: take first, rely on initial shuffle
+        tile = self[slot].possibilities[0]
         self[slot] = tile
         self.active_slots.remove(slot)
 
-        for idx, other_slot in tile.affected_slots(slot):
+        for offset in tile.affected_slots():
+            other_slot = slot + offset
+            if (
+                other_slot.x < 0
+                or other_slot.y < 0
+                or other_slot.x >= Config.GRID_W
+                or other_slot.y >= Config.GRID_H
+            ):
+                continue
             blank = self[other_slot]
             if not isinstance(blank, Blank):
                 continue
             self.active_slots.add(other_slot)
             blank.possibilities = [
-                option
-                for option in blank.possibilities
-                if tile.constraints.match(option.constraints, other_slot - slot)
+                option for option in blank.possibilities if tile.match(option, offset)
             ]
 
     def draw(self, screen: Surface):

@@ -14,6 +14,8 @@ class SPRITES:
     BOT: Surface = None
     MT: Surface = None
 
+    MUNICH: Surface = None
+
 
 def init():
     SPRITES.LEFT = pygame.image.load(RESOURCES / 'left.png').convert_alpha()
@@ -21,3 +23,5 @@ def init():
     SPRITES.TOP = pygame.image.load(RESOURCES / 'top.png').convert_alpha()
     SPRITES.BOT = pygame.image.load(RESOURCES / 'bot.png').convert_alpha()
     SPRITES.MT = pygame.image.load(RESOURCES / 'mt.png').convert_alpha()
+
+    SPRITES.MUNICH = pygame.image.load(RESOURCES / 'munich1.png').convert_alpha()

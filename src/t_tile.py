@@ -9,6 +9,7 @@ from pygame import Surface
 from src.config import Config
 from src.resources import SPRITES
 from src.slot import Slot
+from src.tile_base import TileBase
 
 
 class TileType(Enum):
@@ -36,15 +37,15 @@ class TileConstraints(NamedTuple):  # order matters
     right: int
     bot: int
 
-    def match(self, other: TileConstraints, pos: Slot):
+    def match(self, other: TileConstraints, pos: Slot) -> bool:
         return self[_MAP[pos]] == other[_MAP[-pos]]
 
 
-class Tile:
+class Tile(TileBase):
     def __init__(self, constraints: TileConstraints, type_: TileType):
+        super().__init__()
         self.constraints = constraints
         self.type = type_
-        self.sprite = None
 
     def __repr__(self):
         return f'Tile[{self.type}]'
