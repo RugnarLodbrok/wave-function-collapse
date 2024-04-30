@@ -19,12 +19,12 @@ class GameObject:
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, fill: tuple[int, int, int] | None = (255, 255, 255)):
         self.objects: list[GameObject] = []
         self._running = False
         self._initialized = False
         self.screen: Surface | None = None
-        self.fill = (255, 255, 255)
+        self.fill = fill
         self.key_map: dict[int : Callable[[Self], None]] = {}
 
     def _update(self, dt: float):

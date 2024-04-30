@@ -5,11 +5,10 @@ from random import choice
 from typing import Callable
 
 from pygame import Surface
-from pygame.locals import K_SPACE
 
 from src.config import Config
 from src.munich_tile import TILES
-from src.pygame_base import Game, GameObject
+from src.pygame_base import GameObject
 from src.slot import Slot
 from src.tile_base import Blank
 from src.tile_base import TileBase as Tile
@@ -87,13 +86,6 @@ class Grid(GameObject):
                 elif slot not in self.active_slots:
                     continue
                 tile.draw(screen, slot)
-                # if isinstance(tile, Blank):
-                #     if Slot(x, y) in self.active_slots:
-                #         tile.draw(screen, (x * Config.TILE_SIZE, y * Config.TILE_SIZE))
-                # else:
-                #     screen.blit(
-                #         tile.sprite, (x * Config.TILE_SIZE, y * Config.TILE_SIZE)
-                #     )
 
     def update(self, dt: float) -> None:
         self.step()
@@ -103,19 +95,3 @@ class Grid(GameObject):
 def init_tiles():
     for t in TILES:
         t.init()
-
-
-def run_wave_function_collapse(blank_fn: Callable[[int, int], Blank | Tile]):
-    grid = Grid(blank_fn)
-
-    def step(game: Game):
-        grid.step()
-
-    game = Game()
-    game.fill = None
-    game.objects.append(grid)
-    game.key_map[K_SPACE] = step
-    game.initialize()
-    init_tiles()
-    grid.active_slots.add(Slot(9, 9))
-    game.run()
