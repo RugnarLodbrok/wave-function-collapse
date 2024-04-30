@@ -6,40 +6,22 @@ from typing import Callable
 
 from pygame import Surface
 from pygame.locals import K_SPACE
-from pygame.math import Vector2
 
 from src.config import Config
 from src.munich_tile import TILES
 from src.pygame_base import Game, GameObject
 from src.slot import Slot
+from src.tile_base import Blank
 from src.tile_base import TileBase as Tile
 
 
-class Blank:
-    def __init__(self, possibilities: list[Tile]):
-        self.possibilities = possibilities
-
-    def draw(self, screen: Surface, pos: tuple[int, int]):
-        pos = Vector2(pos)
-        for offset, p in zip(
-            (
-                Vector2(0, 0),
-                Vector2(Config.TILE_SIZE // 2, 0),
-                Vector2(0, Config.TILE_SIZE // 2),
-                Vector2(Config.TILE_SIZE // 2, Config.TILE_SIZE // 2),
-                Vector2(3 * Config.TILE_SIZE // 2, 3 * Config.TILE_SIZE // 2),
-            ),
-            reversed(self.possibilities),
-        ):
-            screen.blit(p.small_sprite, pos + offset)
-
-
 class Grid(GameObject):
-    def __init__(self, tile_fn: Callable[[int, int], Blank | Tile]):
-        self.data: list[list[Tile | Blank]] = [
+    def __init__(self, tile_fn: Callable[[int, int], Tile]):
+        self.data: list[list[Tile]] = [
             [tile_fn(x, y) for y in range(Config.GRID_H)] for x in range(Config.GRID_W)
         ]
         self.active_slots: set[Slot] = set()
+        self.draw_once_queue: set[Slot] = set()
 
     def _chose_best_slot(self) -> Slot:
         slots_per_option_number = defaultdict(list)
@@ -62,19 +44,21 @@ class Grid(GameObject):
         self.active_slots.add(slot)
         self._set_tile(slot)
 
-    def __getitem__(self, item: Slot) -> Tile | Blank:
+    def __getitem__(self, item: Slot) -> Tile:
         return self.data[item.x][item.y]
 
     def __setitem__(self, key: Slot, value: Tile):
         self.data[key.x][key.y] = value
 
     def _set_tile(self, slot: Slot):
-        assert isinstance(self[slot], Blank)
-        if not self[slot].possibilities:
+        tile = self[slot]
+        assert isinstance(tile, Blank)
+        if not tile.possibilities:
             return  # todo: raise
-        tile = self[slot].possibilities[0]
+        tile = tile.possibilities[0]
         self[slot] = tile
         self.active_slots.remove(slot)
+        self.draw_once_queue.add(slot)
 
         for offset in tile.affected_slots():
             other_slot = slot + offset
@@ -97,16 +81,23 @@ class Grid(GameObject):
         tile: Tile | Blank
         for x, column in enumerate(self.data):
             for y, tile in enumerate(column):
-                if isinstance(tile, Blank):
-                    if Slot(x, y) in self.active_slots:
-                        tile.draw(screen, (x * Config.TILE_SIZE, y * Config.TILE_SIZE))
-                else:
-                    screen.blit(
-                        tile.sprite, (x * Config.TILE_SIZE, y * Config.TILE_SIZE)
-                    )
+                slot = Slot(x, y)
+                if slot in self.draw_once_queue:
+                    self.draw_once_queue.remove(slot)
+                elif slot not in self.active_slots:
+                    continue
+                tile.draw(screen, slot)
+                # if isinstance(tile, Blank):
+                #     if Slot(x, y) in self.active_slots:
+                #         tile.draw(screen, (x * Config.TILE_SIZE, y * Config.TILE_SIZE))
+                # else:
+                #     screen.blit(
+                #         tile.sprite, (x * Config.TILE_SIZE, y * Config.TILE_SIZE)
+                #     )
 
     def update(self, dt: float) -> None:
         self.step()
+        # pass
 
 
 def init_tiles():
@@ -121,9 +112,10 @@ def run_wave_function_collapse(blank_fn: Callable[[int, int], Blank | Tile]):
         grid.step()
 
     game = Game()
+    game.fill = None
     game.objects.append(grid)
     game.key_map[K_SPACE] = step
     game.initialize()
     init_tiles()
-    grid.set_tile(Slot(5, 5))
+    grid.active_slots.add(Slot(9, 9))
     game.run()

@@ -1,4 +1,4 @@
-set CODE="src"
+set CODE="src tests"
 autoflake --recursive --in-place --remove-all-unused-imports "%CODE%" || exit /b
 isort "%CODE%" || exit /b
 black  "%CODE%" || exit /b

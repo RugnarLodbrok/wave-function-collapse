@@ -34,6 +34,9 @@ class Slot(NamedTuple):
     def __neg__(self) -> Slot:
         return Slot(-self.x, -self.y)
 
+    def __mul__(self, other: int):
+        return Slot(self.x * other, self.y * other)
+
     def rotate(self, rot: Rot) -> Slot:
         rot = rot % 4
         x, y = self

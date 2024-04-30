@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterator, NamedTuple, Self
+from typing import Callable, Iterator, NamedTuple, Self
 
 import pygame
+from pygame import Surface
 from pygame.transform import rotate
 
 from src.common import Rot
@@ -14,22 +15,14 @@ from src.tile_base import TileBase
 
 
 @dataclass
-class TileSetTransform:
+class TileSpriteMaker:
     slot: Slot
     rot: Rot
 
-    def get_sprite(self):
+    def __call__(self) -> Surface:
         sprite = pygame.Surface((Config.TILE_SIZE, Config.TILE_SIZE))
-        sprite.blit(SPRITES.MUNICH, -self.slot)
+        sprite.blit(SPRITES.MUNICH, -self.slot * Config.TILE_SIZE)
         return rotate(sprite, 90 * self.rot)
-
-
-_TRANSFORMS = {
-    (1, 0, 0, 0): TileSetTransform(Slot(0, 0), Rot(0)),
-    (0, 1, 0, 0): TileSetTransform(Slot(0, 0), Rot(3)),
-    (0, 0, 1, 0): TileSetTransform(Slot(0, 0), Rot(2)),
-    (0, 0, 0, 1): TileSetTransform(Slot(0, 0), Rot(1)),
-}
 
 
 class MunichTileType(NamedTuple):
@@ -50,19 +43,31 @@ class MunichTileType(NamedTuple):
             self.left + pos.x, self.top + pos.y, self.right - pos.x, self.bot - pos.y
         )
 
+    def match(self, other: MunichTileType, pos: Slot) -> bool:
+        if self.translate(pos) == other:
+            return True
+        rot = -pos.quadrant()
+        pos = pos.rotate(rot)
+        a = self.rotate(rot)
+        b = other.rotate(rot)
+        x, y = pos
+        return a.right + b.left < x or a.bot + b.top < y
+
 
 class Tile(TileBase):
     MAX_SIZE = Slot(4, 3)
 
-    def __init__(self, left: int, top: int, right: int, bot: int):
+    def __init__(self, type_: MunichTileType, sprite_fn: Callable[[], Surface]):
         super().__init__()
-        self.type = MunichTileType(left, top, right, bot)
+        self.type = type_
+        self._sprite_fn = sprite_fn
+        self.small_sprite = None
 
     def __repr__(self):
         return f'Tile{self.type}'
 
     def init(self):
-        self.sprite = _TRANSFORMS[self.type].get_sprite()
+        self.sprite = self._sprite_fn()
         self.small_sprite = pygame.transform.scale_by(self.sprite, 1 / 2.1)
 
     def affected_slots(self) -> Iterator[Slot]:
@@ -73,19 +78,16 @@ class Tile(TileBase):
                 yield Slot(x, y)
 
     def match(self, other: Tile, pos: Slot) -> bool:
-        if self.type.translate(pos) == other.type:
-            return True
-        rot = -pos.quadrant()
-        pos = pos.rotate(rot)
-        a = self.type.rotate(rot)
-        b = other.type.rotate(rot)
-        x, y = pos
-        return a.right + b.left < x or a.bot + b.top < y
+        return self.type.match(other.type, pos)
 
 
 TILES = [
-    Tile(1, 0, 0, 0),
-    Tile(0, 1, 0, 0),
-    Tile(0, 0, 1, 0),
-    Tile(0, 0, 0, 1),
+    Tile(MunichTileType(1, 0, 0, 0), TileSpriteMaker(Slot(0, 0), Rot(0))),
+    Tile(MunichTileType(0, 1, 0, 0), TileSpriteMaker(Slot(0, 0), Rot(3))),
+    Tile(MunichTileType(0, 0, 1, 0), TileSpriteMaker(Slot(0, 0), Rot(2))),
+    Tile(MunichTileType(0, 0, 0, 1), TileSpriteMaker(Slot(0, 0), Rot(1))),
+    Tile(MunichTileType(1, 1, 0, 0), TileSpriteMaker(Slot(0, 1), Rot(0))),
+    Tile(MunichTileType(0, 1, 1, 0), TileSpriteMaker(Slot(0, 1), Rot(3))),
+    Tile(MunichTileType(0, 0, 1, 1), TileSpriteMaker(Slot(0, 1), Rot(2))),
+    Tile(MunichTileType(1, 0, 0, 1), TileSpriteMaker(Slot(0, 1), Rot(1))),
 ]
